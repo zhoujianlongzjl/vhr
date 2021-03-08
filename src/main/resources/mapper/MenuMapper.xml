@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjl.vhr.mapper.MenuMapper">
+    <resultMap id="MenuResultMap" type="com.zjl.vhr.entity.Menu">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="component" property="component" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="iconCls" property="iconCls" jdbcType="VARCHAR"/>
+        <result column="parentId" property="parentId" jdbcType="INTEGER"/>
+        <result column="enabled" property="enabled" jdbcType="BIT"/>
+        <association property="meta" javaType="com.zjl.vhr.entity.Meta">
+            <result column="keepAlive" property="keepAlive" jdbcType="BIT"/>
+            <result column="requireAuth" property="requireAuth" jdbcType="BIT"/>
+        </association>
+        <collection property="children" ofType="com.zjl.vhr.entity.Menu">
+            <id column="id2" property="id" jdbcType="INTEGER"/>
+            <result column="url2" property="url" jdbcType="VARCHAR"/>
+            <result column="path2" property="path" jdbcType="VARCHAR"/>
+            <result column="component2" property="component" jdbcType="VARCHAR"/>
+            <result column="name2" property="name" jdbcType="VARCHAR"/>
+            <result column="iconCls2" property="iconCls" jdbcType="VARCHAR"/>
+            <result column="parentId2" property="parentId" jdbcType="INTEGER"/>
+            <result column="enabled2" property="enabled" jdbcType="BIT"/>
+            <association property="meta" javaType="com.zjl.vhr.entity.Meta">
+                <result column="keepAlive2" property="keepAlive" jdbcType="BIT"/>
+                <result column="requireAuth2" property="requireAuth" jdbcType="BIT"/>
+            </association>
+        </collection>
+        <collection property="roles" ofType="com.zjl.vhr.entity.Role">
+            <id column="rid" property="id" jdbcType="INTEGER"/>
+            <result column="rname" property="name" jdbcType="VARCHAR"/>
+            <result column="rnameZh" property="nameZh" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+    <resultMap id="MenuWithChildren" type="com.zjl.vhr.entity.Menu" extends="MenuResultMap">
+        <id column="id1" property="id"/>
+        <result column="name1" property="name"/>
+        <collection property="children" ofType="com.zjl.vhr.entity.Menu">
+            <id column="id2" property="id"/>
+            <result column="name2" property="name"/>
+            <collection property="children" ofType="com.zjl.vhr.entity.Menu">
+                <id column="id3" property="id"/>
+                <result column="name3" property="name"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="getMidsByRid" resultType="java.lang.Integer">
+    select mid from menu_role where rid=#{rid};
+  </select>
+
+    <select id="getAllMenus" resultMap="MenuWithChildren">
+    select m1.`id` as id1,m1.`name` as name1,m2.`id` as id2,m2.`name` as name2,m3.`id` as id3,m3.`name` as name3 from menu m1,menu m2,menu m3 where m1.`id`=m2.`parentId` and m2.`id`=m3.`parentId` and m3.`enabled`=true order by m1.`id`,m2.`id`,m3.`id`
+  </select>
+
+    <select id="getMenuByHrId" resultMap="MenuResultMap">
+select distinct m1.*,m2.id as id2,m2.component as component2,m2.enabled as enabled2,
+                m2.iconCls as iconCls2,m2.keepAlive as keepAlive2,m2.name as name2,
+                m2.parentId as parentId2,m2.requireAuth as requireAuth2,m2.path as path2
+                ,m2.url as url2
+from menu m1 left join menu m2 on m1.id=m2.parentId
+   left join menu_role m on m2.id = m.mid
+   left join hr_role hrr on m.rid = hrr.rid
+left join hr h on hrr.hrid = h.id
+where h.id=#{hrid} and m2.enabled=true order by m1.id,m2.id;
+    </select>
+
+    <select id="getAllMenuWithRole" resultMap="MenuResultMap">
+select m.*,r.id as rid,r.name as rname,r.nameZh as rnameZh
+from menu m,menu_role mr,role r
+where m.id=mr.mid and mr.rid=r.id
+order by m.id;
+    </select>
+</mapper>
